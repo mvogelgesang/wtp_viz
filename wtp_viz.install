@@ -1,0 +1,96 @@
+<?php
+
+/**
+ * @file
+ * File module installation and upgrade code.
+ */
+
+/**
+ * Implementation of hook_enable().
+ */
+function wtp_enable() {
+  drupal_set_message(t('WTP Vis module successfully installed. Please review the available <a href="@settings">configuration settings</a>.', array('@settings' => url('admin/config/modules/wtp_viz'))));
+}
+
+/**
+ * Implementation of hook_install().
+ */
+function wtp_viz_install() {
+  $t = get_t();
+   $node_wtp_viz = array(
+    'type' => 'wtp_viz',
+    'name' => $t('We the People Viz'),
+    'base' => 'node_content',
+    'description' => $t('Builds a We the People visualization.'),
+    'body_label' => $t('Builds a We the People visualization.')
+  );
+
+  // Complete the node type definition by setting any defaults not explicitly
+  // declared above.
+  // http://api.drupal.org/api/function/node_type_set_defaults/7
+  $content_type = node_type_set_defaults($node_wtp_viz);
+  node_add_body_field($content_type, $t('Description'));
+
+  // Save the content type
+  node_type_save($content_type);
+
+  //Create fields
+  $fields = array();
+
+  $chartList = array(
+    'bar' => $t('Bar'),
+    'column' => $t('Column'),
+    'gantt' => $t('Gantt'),
+    'heatmap' => $t('Heatmap'),
+  );
+
+  $fields['wtp_viz_chart_type'] = array(
+    'field_name' => 'wtp_viz_chart_type',
+    'type' => 'list_text',
+    'options' => $chartList,
+  );
+//loop through the array and create fields
+  foreach ($fields as $field) {
+    field_create_field($field);
+  }
+
+  // Create Field Instances
+  $instances = array();
+
+  $instances['wtp_viz_chart_type'] = array(
+    'field_name' => 'wtp_viz_chart_type',
+    'label' => $t('Chart Type'),
+    'description' => $t('Type of chart you will use to display data'),
+    'widget' => array(
+      'type' => 'text',
+    ),
+    'required' => FALSE,
+    'settings' => array(
+      'max_length' => 350,
+    ),
+  );
+
+  foreach ($instances as $instance) {
+    $instance['entity_type'] = 'node';
+    $instance['bundle'] = 'wtp_viz';
+    field_create_instance($instance);
+  } 
+}
+
+/**
+ * Implementation of hook_uninstall().
+ */
+function wtp_viz_uninstall() {
+   $sql = 'SELECT nid FROM {node} n WHERE n.type = :type';
+  $result = db_query($sql, array(':type' => 'wtp_viz'));
+  $nids = array();
+  foreach ($result as $row) {
+    $nids[] = $row->nid;
+  }
+  // Delete all the nodes at once
+  // http://api.drupal.org/api/function/node_delete_multiple/7
+  node_delete_multiple($nids);
+  // Delete our content type
+  // http://api.drupal.org/api/function/node_type_delete/7
+  node_type_delete('wtp_viz');
+}

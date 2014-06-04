@@ -1,0 +1,4 @@
+name = We the People data visualization module
+description = Creates custom content type to display data visualizations using data from We the People (petitions.whitehouse.gov)
+core = 7.x
+dependencies[] = libraries (2.x)

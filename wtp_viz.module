@@ -1,0 +1,169 @@
+<?php
+/**
+ * Implements hook_libraries_info().
+ *
+ * For defining external libraries.
+ */
+function wtp_viz_libraries_info() {
+  // A very simple library. No changing APIs (hence, no versions), no variants.
+  // Expected to be extracted into 'sites/all/libraries/simple'.
+  $libraries['Petitions-PHP-SDK'] = array(
+    'name' => 'Petitions-PHP-SDK',
+    'vendor url' => 'https://github.com/WhiteHouse/petitions-php-sdk',
+    'download url' => 'https://github.com/WhiteHouse/petitions-php-sdk/archive/master.zip',
+    'version arguments' => array(
+      'file' => 'petitions_php_sdk.php', // Could be any file with version info
+      'pattern' => '/Version (\d+)/',
+      'lines' => 10,
+    ),
+    'files' => array(
+      'php' => array('petitions_php_sdk.php'),
+    ),
+  );
+  return $libraries;
+}
+
+/**
+ * Implements hook_help().
+ */
+function wtp_viz_help($path, $arg) {
+  switch ($path) {
+    case "admin/help#wtp_viz":
+      return '<p>'. t('The WTP Visualization module will display We the People petitions data using a variety of visualization techniques.') .'</p>';
+  }
+}
+
+/**
+ * Implements hook_menu().
+ */
+function wtp_viz_menu() {
+  $items['admin/config/modules/wtp_viz'] = array(
+    'title' => 'WTP Visualization',
+    'description' => 'Configures policies for connecting to the We the People petitions site.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('wtp_viz_admin_settings'),
+    'access arguments' => array('administer users'),
+    'file' => 'wtp_viz.admin.inc',
+  );
+  
+  
+  
+  return $items;
+}
+
+/**
+ * Implements hook_node_view().
+ */
+function wtp_viz_node_view($node, $view_mode, $langcode) {
+  libraries_load('Petitions-PHP-SDK');
+  $ptsdk = new PetitionsApiConnector(variable_get('wtp_viz_base_URL'), variable_get('wtp_viz_api_key'));
+
+
+  //Array of Issue types available in for Petitions
+  $tmpIssuesArray = ["Agriculture","Arts and Humanities","Budget and Taxes","Civil Rights and Liberties","Climate Change","Consumer Protections","Criminal Justice and Law Enforcement","Defense","Disabilities","Economy","Education","Energy","Environment","Family","Firearms","Foreign Policy","Government Reform","Health Care","Homeland Security and Disaster Relief","Housing","Human Rights","Immigration","Innovation","Job Creation","Labor","Natural Resources","Postal Service","Poverty","Regulatory Reform","Rural Policy","Science and Space Policy","Small Business","Social Security","Technology and Telecommunications","Trade","Transportation and Infrastructure","Urban Policy","Veterans and Military Families","Women's Issues"];
+
+  //loop issues array and create an associative array for eac month which contains issue names and counts
+  $issuesCategoryArray = array();
+  for ($a=0; $a < 6; $a++) {
+    for ($i=0; $i < count($tmpIssuesArray); $i++) {
+      $issuesCategoryArray[$a][$tmpIssuesArray[$i]] = 0;
+    }
+  }
+
+
+  // set limit for each getPetitions call
+  $limit = 100;
+
+  // Make initial call to retrieve results and determine how many results exist
+  $pt = $ptsdk->getPetitions($limit, 0, ['createdAfter'=>1388534400]);
+  
+  // determine number of times the api must be called to retrieve all results
+  $numloops = ceil($pt->{'metadata'}->{'resultset'}->{'count'} / $limit);
+
+  // Loop through all of the petitions and start putting the issues into the appropriate array
+  for ($i=0; $i < $numloops; $i++) {
+    // getPetition
+    $tmpPetitions = $ptsdk->getPetitions($limit, $i*$limit ,['createdAfter'=>1388534400]);
+    // Make sure to get the result count so that you do not try to reference an 
+    // undefined index (really only needed on the final loop)
+    $resultCt = count($tmpPetitions->{'results'});
+
+    // Now that we know there are XX results, in the given call, loop through those
+    for ($j=0; $j < $resultCt; $j++) {
+      // convert the time stamp to a month, subtract 1 so that 0=Jan, 1=Feb, etc
+      $month = date('n',$tmpPetitions->{'results'}[$j]->{'created'})-1;
+      // Call incrementIssueCategoryArray and append results to existing array
+      $issuesCategoryArray = incrementIssueCategoryArray($tmpPetitions->{'results'}[$j]->{'issues'},$issuesCategoryArray,$month);
+    }
+  }
+
+  // High charts needs this converted into an array with only numeric values
+  $newArray = array();
+  // loop over each month
+  for ($k=0; $k < count($issuesCategoryArray); $k++) {
+    $i = 0;
+    // for each month, loop through all associative array items
+    foreach ($issuesCategoryArray[$k] as $issueName) {
+      // $k = month
+      // $i = issue name in associative array 
+      // $issuename = number of petitions with given issuename
+      $newArray[] = array($k,$i,$issueName);
+      $i++;
+    }
+  }
+
+  // encode this to json
+  $jsonArray = json_encode($newArray);
+  drupal_add_js(drupal_get_path('module', 'wtp_viz') . '/theme/heatmap.js');
+  drupal_add_js(array('wtp_viz_data' => $newArray), 'setting');
+  drupal_add_js('http://code.highcharts.com/highcharts.js', 'external');
+  drupal_add_js('http://code.highcharts.com/modules/heatmap.js', 'external');
+  drupal_add_js('http://code.highcharts.com/modules/exporting.js', 'external');
+  
+  if ($node->type == 'wtp_viz' && $view_mode == 'full') {
+    $node->content['wtp_viz'] = array(
+      '#markup' => theme('heatmap', array(
+        'node' => $node,
+        'jsonArray' => $jsonArray,
+      )),
+      '#weight' => 100,
+    );
+  }
+} 
+
+
+/**
+ * Implements hook_theme().
+ */
+function wtp_viz_theme($existing, $type, $theme, $path) {
+  return array(
+    // When declaring a template file, a corresponding preprocess function
+    // is also automatically assigned (see template_preprocess_greetings).
+    'heatmap' => array(
+      'arguments' => array('jsonArray' => NULL, 'node' => NULL),
+      'template' => 'theme/heatmap',
+    ),
+  );
+}
+
+/**
+ * 
+ */
+function theme_heatmap($jsonArray,$node) {
+  
+}
+
+/**
+  * Receives an issueCategoryArray and an issue Object that then increments the 
+  * issue types in the issuecategoryarray 
+  * @param type $issueObj
+  * @param type $issueCategoryArray
+  * @return array $issueCategoryArray
+  */
+ function incrementIssueCategoryArray($issueObj,$issueCategoryArray,$month) {
+   for ($i=0; $i < count($issueObj); $i++) {
+     $name = $issueObj[$i]->{'name'};
+     $issueCategoryArray[$month][$name]++;
+   }
+   return $issueCategoryArray;
+ }

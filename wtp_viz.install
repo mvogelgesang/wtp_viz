@@ -37,18 +37,119 @@ function wtp_viz_install() {
   //Create fields
   $fields = array();
 
-  $chartList = array(
-    'bar' => $t('Bar'),
-    'column' => $t('Column'),
-    'gantt' => $t('Gantt'),
-    'heatmap' => $t('Heatmap'),
-  );
-
   $fields['wtp_viz_chart_type'] = array(
+    'active' => 1,
+    'cardinality' => 1,
+    'deleted' => 0,
+    'entity_types' => array(),
     'field_name' => 'wtp_viz_chart_type',
+    'foreign keys' => array(),
+    'indexes' => array(
+      'value' => array(
+        0 => 'value',
+      ),
+    ),
+    'locked' => 0,
+    'module' => 'list',
+    'settings' => array(
+      'allowed_values' => array(
+        'Bar' => 'Bar',
+        'Column' => 'Column',
+        'Heatmap' => 'Heatmap',
+      ),
+      'allowed_values_function' => '',
+    ),
+    'translatable' => 0,
     'type' => 'list_text',
-    'options' => $chartList,
   );
+  
+  $fields['wtp_viz_heatmap_type'] = array(
+    'active' => 1,
+    'cardinality' => 1,
+    'deleted' => 0,
+    'entity_types' => array(),
+    'field_name' => 'wtp_viz_heatmap_type',
+    'foreign keys' => array(),
+    'indexes' => array(
+      'value' => array(
+        0 => 'value',
+      ),
+    ),
+    'locked' => 0,
+    'module' => 'list',
+    'settings' => array(
+      'allowed_values' => array(
+        'Petitions by Issue' => 'Petitions by Issue',
+        'Signatures Over Time' => 'Signatures Over Time',
+      ),
+      'allowed_values_function' => '',
+    ),
+    'translatable' => 0,
+    'type' => 'list_text',
+  );
+  
+  $fields['wtp_viz_issue_type'] = array(
+    'active' => 1,
+    'cardinality' => -1,
+    'deleted' => 0,
+    'entity_types' => array(),
+    'field_name' => 'wtp_viz_issue_type',
+    'foreign keys' => array(),
+    'indexes' => array(
+      'value' => array(
+        0 => 'value',
+      ),
+    ),
+    'locked' => 0,
+    'module' => 'list',
+    'settings' => array(
+      'allowed_values' => array(
+        'Agriculture' => 'Agriculture',
+        'Arts and Humanities' => 'Arts and Humanities',
+        'Budget and Taxes' => 'Budget and Taxes',
+        'Civil Rights and Liberties' => 'Civil Rights and Liberties',
+        'Climate Change' => 'Climate Change',
+        'Consumer Protections' => 'Consumer Protections',
+        'Criminal Justice and Law Enforcement' => 'Criminal Justice and Law Enforcement',
+        'Defense' => 'Defense',
+        'Disabilities' => 'Disabilities',
+        'Economy' => 'Economy',
+        'Education' => 'Education',
+        'Energy' => 'Energy',
+        'Environment' => 'Environment',
+        'Family' => 'Family',
+        'Firearms' => 'Firearms',
+        'Foreign Policy' => 'Foreign Policy',
+        'Government Reform' => 'Government Reform',
+        'Health Care' => 'Health Care',
+        'Homeland Security and Disaster Relief' => 'Homeland Security and Disaster Relief',
+        'Housing' => 'Housing',
+        'Human Rights' => 'Human Rights',
+        'Immigration' => 'Immigration',
+        'Innovation' => 'Innovation',
+        'Job Creation' => 'Job Creation',
+        'Labor' => 'Labor',
+        'Natural Resources' => 'Natural Resources',
+        'Postal Service' => 'Postal Service',
+        'Poverty' => 'Poverty',
+        'Regulatory Reform' => 'Regulatory Reform',
+        'Rural Policy' => 'Rural Policy',
+        'Science and Space Policy' => 'Science and Space Policy',
+        'Small Business' => 'Small Business',
+        'Social Security' => 'Social Security',
+        'Technology and Telecommunications' => 'Technology and Telecommunications',
+        'Trade' => 'Trade',
+        'Transportation and Infrastructure' => 'Transportation and Infrastructure',
+        'Urban Policy' => 'Urban Policy',
+        'Veterans and Military Families' => 'Veterans and Military Families',
+        'Women\'s Issues' => 'Women\'s Issues',
+      ),
+      'allowed_values_function' => '',
+    ),
+    'translatable' => 0,
+    'type' => 'list_text',
+  );
+  
 //loop through the array and create fields
   foreach ($fields as $field) {
     field_create_field($field);
@@ -58,15 +159,112 @@ function wtp_viz_install() {
   $instances = array();
 
   $instances['wtp_viz_chart_type'] = array(
-    'field_name' => 'wtp_viz_chart_type',
-    'label' => $t('Chart Type'),
-    'description' => $t('Type of chart you will use to display data'),
-    'widget' => array(
-      'type' => 'text',
+    'bundle' => 'wtp_viz',
+    'default_value' => NULL,
+    'deleted' => 0,
+    'description' => 'type of chart you would like to create',
+    'display' => array(
+      'default' => array(
+        'label' => 'above',
+        'module' => 'list',
+        'settings' => array(),
+        'type' => 'list_default',
+        'weight' => 1,
+      ),
+      'teaser' => array(
+        'label' => 'above',
+        'settings' => array(),
+        'type' => 'hidden',
+        'weight' => 0,
+      ),
     ),
-    'required' => FALSE,
+    'entity_type' => 'node',
+    'field_name' => 'wtp_viz_chart_type',
+    'label' => 'Chart type',
+    'required' => 1,
     'settings' => array(
-      'max_length' => 350,
+      'user_register_form' => FALSE,
+    ),
+    'widget' => array(
+      'active' => 1,
+      'module' => 'options',
+      'settings' => array(),
+      'type' => 'options_select',
+      'weight' => -3,
+    ),
+  );
+
+  // Exported field_instance: 'node-wtp_viz-field_heatmap_type'
+  $instances['wtp_viz_heatmap_type'] = array(
+    'bundle' => 'wtp_viz',
+    'default_value' => NULL,
+    'deleted' => 0,
+    'description' => '',
+    'display' => array(
+      'default' => array(
+        'label' => 'above',
+        'module' => 'list',
+        'settings' => array(),
+        'type' => 'list_default',
+        'weight' => 4,
+      ),
+      'teaser' => array(
+        'label' => 'above',
+        'settings' => array(),
+        'type' => 'hidden',
+        'weight' => 0,
+      ),
+    ),
+    'entity_type' => 'node',
+    'field_name' => 'wtp_viz_heatmap_type',
+    'label' => 'Heatmap Type',
+    'required' => 0,
+    'settings' => array(
+      'user_register_form' => FALSE,
+    ),
+    'widget' => array(
+      'active' => 1,
+      'module' => 'options',
+      'settings' => array(),
+      'type' => 'options_select',
+      'weight' => 0,
+    ),
+  );
+
+  // Exported field_instance: 'node-wtp_viz-field_issue_type'
+  $instances['wtp_viz_issue_type'] = array(
+    'bundle' => 'wtp_viz',
+    'default_value' => NULL,
+    'deleted' => 0,
+    'description' => '',
+    'display' => array(
+      'default' => array(
+        'label' => 'above',
+        'module' => 'list',
+        'settings' => array(),
+        'type' => 'list_default',
+        'weight' => 3,
+      ),
+      'teaser' => array(
+        'label' => 'above',
+        'settings' => array(),
+        'type' => 'hidden',
+        'weight' => 0,
+      ),
+    ),
+    'entity_type' => 'node',
+    'field_name' => 'wtp_viz_issue_type',
+    'label' => 'Issue Type',
+    'required' => 0,
+    'settings' => array(
+      'user_register_form' => FALSE,
+    ),
+    'widget' => array(
+      'active' => 1,
+      'module' => 'options',
+      'settings' => array(),
+      'type' => 'options_select',
+      'weight' => -1,
     ),
   );
 
@@ -93,4 +291,18 @@ function wtp_viz_uninstall() {
   // Delete our content type
   // http://api.drupal.org/api/function/node_type_delete/7
   node_type_delete('wtp_viz');
+}
+
+/**
+ * Options callback for simple_content_type_checkboxes field
+ * @return - returns an indexed array as integer => string
+ */
+function _wtp_viz_chart_type_options_list() {
+  $options = array(
+    'bar' => $t('Bar'),
+    'column' => $t('Column'),
+    'gantt' => $t('Gantt'),
+    'heatmap' => $t('Heatmap'),
+  );
+  return $options;
 }

@@ -175,3 +175,26 @@ function theme_heatmap($jsonArray,$node) {
    }
    return $issueCategoryArray;
  }
+ 
+ /**
+  * Implements hook_form_BASE_FORM_ID_alter
+  * @param array $form
+  * @param type $form_state
+  * @param type $form_id
+  */
+ function wtp_viz_form_node_form_alter(&$form, &$form_state, $form_id) {
+   $content_type = $form['#node']->type;
+    if ($content_type == 'wtp_viz') {
+     $form['wtp_viz_heatmap_type']['und']['#states'] = array(
+       'visible' => array(
+         ':input[name="wtp_viz_chart_type[und]"]' => array('value' => 'Heatmap'),
+       ),
+       'invisible' => array(
+         ':input[name="wtp_viz_chart_type[und]"]' => array('!value' => 'Heatmap'),
+       ),
+    );
+  }
+  
+ }
+ 
+ 
